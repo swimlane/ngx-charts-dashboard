@@ -1,0 +1,44 @@
+<div class="container">
+  <div class="charts">
+    <div class="viz-container" [ngClass]="chart.theme" *ngFor="let chart of charts">
+        <h1></h1>
+        <app-chart
+          class="chart"
+          [chart]="chart"
+          [data]="chart.data"
+          [chartType]="chart.chartType"
+          (select)="onSelect()">
+        </app-chart>
+      </div>
+  </div>
+  <div class="filters">
+    <div class="filter" *ngFor="let filter of filters">
+      <button class="pull-right" (click)="onClear(filter)">(clear)</button>
+      <div *ngIf="filter.type === 'value'">
+        {{filter.label}}
+        <ngx-slider
+          [(ngModel)]="filter.range[0]"
+          [step]="filter.step"
+          [filled]="true"
+          [min]="filter.minValue"
+          [max]="filter.maxValue"
+          (change)="updateFilters()">
+        </ngx-slider>
+        {{filter.range[0]}}
+      </div>
+      <div *ngIf="filter.type === 'cat'">
+        <label>{{filter.label}}</label>
+        <ul class="vertical-list">
+          <li *ngFor="let item of filter.query.data">
+            <ngx-checkbox
+              [(ngModel)]="filter.rangeIndex[item.key]"
+              (change)="updateFilters()">
+              {{item.key}} ({{item.value.count}})
+            </ngx-checkbox>
+          </li>
+        </ul>
+      </div>
+    </div>
+
+  </div>
+</div>

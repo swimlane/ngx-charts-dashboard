@@ -12,7 +12,16 @@ function createChartType({title, ...obj}) {
 }
 
 export const chartTypes = [
-  createChartType({ title: 'Bar Vertical 2D' }),
+  createChartType({ title: 'Bar Vertical', dimLabels: ['Group by', null, 'Value', null, 'Aggregation']}),
+  createChartType({ title: 'Pie', dimLabels: ['Group by', null, 'Value', null, 'Aggregation']}),
+  createChartType({ title: 'Tree Map', dimLabels: ['Group by', null, 'Value', null, 'Aggregation']}),
+  createChartType({ title: 'Number Cards', dimLabels: ['Group by', null, 'Value', null, 'Aggregation']}),
+  createChartType({ title: 'Guage', dimLabels: ['Group by', null, 'Value', null, 'Aggregation']}),
+  createChartType({ title: 'Pie Grid', dimLabels: ['Group by', null, 'Value', null, 'Aggregation']}),
+
+  // createChartType({ title: 'Bar Vertical 2D', dimLabels: ['Group by', 'Name', 'Value', null, 'Aggregation']})
+
+  /*
   createChartType({ title: 'Bar Horizontal 2D' }),
   createChartType({ title: 'Bar Vertical Stacked' }),
   createChartType({ title: 'Bar Vertical Normalized' }),
@@ -20,5 +29,5 @@ export const chartTypes = [
   createChartType({ title: 'Polar Chart', dimLabels: ['Group by', 'Angle Values', 'Radius Values', null] }),
   createChartType({ title: 'Line Chart', dimLabels: ['Group by', 'x-Values', 'y-Values', null] }),
   createChartType({ title: 'Heat Map', dimLabels: ['x-Category', 'y-Category', 'Color', null] }),
-  createChartType({ title: 'Bubble Chart', dimLabels: ['GroupBy', 'x-Values', 'y-Values', 'Radius'] })
+  createChartType({ title: 'Bubble Chart', dimLabels: ['GroupBy', 'x-Values', 'y-Values', 'Radius'] }) */
 ];

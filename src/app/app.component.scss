@@ -44,7 +44,7 @@ body {
   justify-content: center;
 
   .CodeMirror {
-    height: 250px;
+    min-height: 800px;
   }
 }
 
@@ -206,12 +206,6 @@ $color-text-dark: #72809b;
   }
 }
 
-.viz-container {
-  position: relative;
-  display: flow-root;
-  min-height: 600px;
-}
-
 svg.ngx-charts {
   float: left;
   overflow: visible;
@@ -226,15 +220,9 @@ svg.ngx-charts {
   float: right;
 }
 
-.color-scale {
-  text-align: center;
+app-chart {
+  display: block;
   width: 100%;
-  list-style-type: none;
-  padding-left: 0;
-  margin: 0;
-
-  li {
-    margin: 3px;
-    border-radius: 3px;
-  }
+  height: 400px;
+  margin-bottom: 60px;
 }

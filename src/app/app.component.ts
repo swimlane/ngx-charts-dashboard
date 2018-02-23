@@ -1,105 +1,42 @@
-import { Component, ViewEncapsulation, OnInit } from '@angular/core';
+import { Component, ViewEncapsulation, OnInit, ViewChild, TemplateRef, NgZone } from '@angular/core';
 import { colorSets } from '@swimlane/ngx-charts/release/utils/color-sets';
-import * as shape from 'd3-shape';
-import * as dsv from 'd3-dsv';
-import { nest } from 'd3-collection';
-import * as babyparse from 'babyparse';
 import SvgSaver from 'svgsaver';
-import chroma from 'chroma-js';
 
-import { chartTypes } from './chartTypes';
+import { TabsComponent, TabComponent } from '@swimlane/ngx-ui';
+
+import { Chart, Filter, Data, Query } from './data.models';
+import { DataService } from './data.service';
 import { gapminder } from './data';
-
-const defaultOptions = {
-  view: [1000, 600],
-  colorScheme: colorSets.find(s => s.name === 'cool'),
-  schemeType: 'ordinal',
-  showLegend: true,
-  legendTitle: 'Legend',
-  gradient: false,
-  showXAxis: true,
-  showYAxis: true,
-  showXAxisLabel: true,
-  showYAxisLabel: true,
-  yAxisLabel: '',
-  xAxisLabel: '',
-  autoScale: true,
-  showGridLines: true,
-  rangeFillOpacity: 0.5,
-  roundDomains: false,
-  tooltipDisabled: false,
-  showSeriesOnHover: true,
-  curve: shape.curveLinear,
-  curveClosed: shape.curveCardinalClosed
-};
-
-const  curves = {
-  'Basis': shape.curveBasis,
-  'Basis Closed': shape.curveBasisClosed,
-  'Bundle': shape.curveBundle.beta(1),
-  'Cardinal': shape.curveCardinal,
-  'Cardinal Closed': shape.curveCardinalClosed,
-  'Catmull Rom': shape.curveCatmullRom,
-  'Catmull Rom Closed': shape.curveCatmullRomClosed,
-  'Linear': shape.curveLinear,
-  'Linear Closed': shape.curveLinearClosed,
-  'Monotone X': shape.curveMonotoneX,
-  'Monotone Y': shape.curveMonotoneY,
-  'Natural': shape.curveNatural,
-  'Step': shape.curveStep,
-  'Step After': shape.curveStepAfter,
-  'Step Before': shape.curveStepBefore,
-  'default': shape.curveLinear
-};
-
+import { toCapitalizedWords } from './utils';
 
 @Component({
   selector: 'app-root',
   templateUrl: './app.component.html',
-  styleUrls: ['../../node_modules/@swimlane/ngx-ui/release/index.css', './app.component.scss'],
+  styleUrls: ['./app.component.scss'],
   encapsulation: ViewEncapsulation.None
 })
 export class AppComponent implements OnInit {
-  chartTypes = chartTypes;
+  charts: Chart[] = [];
+  filters: Filter[] = [];
 
-  data: any[];
-  rawData: any[];
-  headerValues: any[];
-  errors: any[];
-  chartType: any;
-  theme: string;
+  @ViewChild('tabs') tabs: TabsComponent;
+  @ViewChild('dashboardTab') dashboardTab: TabComponent;
+  @ViewChild('dataTab') dataTab: TabComponent;
 
-  dataDims: string[];
-  chartOptions: any;
-  colors: string;
-  colorsRight: string;
-  steps: number;
-  bezier: boolean;
-  lightness: boolean;
-  bezierRight: boolean;
-  lightnessRight: boolean;
-  diverging: boolean;
+  _dataText = ' ';
+  errors: any[] = [];
+  rawData: Data[] = [];
 
-  _dataText: string;
-  get dataText() {
+  get dataText(): string {
     return this._dataText || ' ';
   }
 
-  set dataText(value) {
+  set dataText(value: string) {
     this.updateData(value);
   }
 
   get hasValidData() {
     return this._dataText.length > 0 && this.errors.length === 0;
-  }
-
-  get hasChartSelected() {
-    return this.hasValidData && this.chartType && this.chartType.name;
-  }
-
-  get hasValidDimensions() {
-    return this.hasChartSelected &&
-      !this.chartType.dimLabels.some((l, i) => l ? !this.dataDims[i] : false);
   }
 
   editorConfig = {
@@ -110,140 +47,89 @@ export class AppComponent implements OnInit {
     }
   };
 
-  svgSaver = new SvgSaver();
+  svgSaver; // = new SvgSaver();
+
+  constructor(private ngZone: NgZone, private dataService: DataService) { }
 
   ngOnInit() {
     this.clearAll();
   }
 
-  useExample() {
-    this.clear();
-    this.dataText = gapminder;
-    this.updateData();
-    this.chartType = chartTypes[0];
-    this.dataDims = [5, 0, 3, 3].map(i => this.headerValues[i].name);
+  async useExample() {
+    this._dataText = gapminder;
+    await this.updateData();
+    // this.dataDims = [5, 0, 3, 3].map(i => this.headerValues[i].name);
+
+    this.ngZone.run(() => {});
   }
 
-  clear() {
-    this.headerValues = [];
-    this.rawData = [];
-    this.dataDims = [null, null, null, null];
-    return this.data = [];
+  onResetClicked() {
+    this.clearAll();
+    this.tabs.tabClicked(this.dataTab);
   }
 
   clearAll() {
-    this.clear();
     this.dataText = '';
-    this.chartType = null;
-    this.theme = 'light';
-    this.colors = '#a8385d,#7aa3e5,#a27ea8,#aae3f5,#adcded,#a95963,#8796c0,#7ed3ed,#50abcc,#ad6886';
-    this.colorsRight = 'darkred, deeppink, orange, lightyellow';
-    this.steps = 10;
-    this.bezier = false;
-    this.lightness = false;
-    this.bezierRight = false;
-    this.lightnessRight = false;
-    this.bezier = false;
-    this.lightness = false;
-    this.chartOptions = {...defaultOptions};
-    return this.updateColorScheme();
+    this.charts = [];
   }
 
-  processData() {
-    if (!this.hasValidDimensions) {
+  async addChartToDashboard(chart: Chart) {
+    this.charts.push(chart);
+
+    // todo: assumes single series chart
+    const x = this.dataService.createQuery(chart.dataDims[0], chart.dataDims[2], chart.dataDims[4]);
+    const y = this.dataService.createQuery(chart.dataDims[2], 'count');
+
+    const qs = await Promise.all([x, y]);
+
+    chart.xQuery = qs[0];
+    chart.yQuery = qs[1];
+
+    chart.xFilter = this.addFilter(chart.xQuery);
+    chart.yFilter = this.addFilter(chart.yQuery);
+
+    this.tabs.tabClicked(this.dashboardTab);
+  }
+
+  private async updateData(value = this._dataText) {
+    const data = await this.dataService.updateData(value);
+
+    if (data.length < 1 || this.errors.length) {
+      this._dataText = '';
+      this.errors = [];
       return;
     }
-    const key$ = d => d[this.dataDims[0]];
-    const name$ = d => d[this.dataDims[1]];
-    const value$ = d => d[this.dataDims[2]];
-    const value2$ = d => d[this.dataDims[3]];
 
-    return this.data = nest()
-      .key(key$)
-      .entries(this.rawData)
-      .map(series);
-
-    function series(d) {
-      return {
-        name: d.key,
-        series: d.values.map(seriesPoints)
-      };
-    }
-
-    function seriesPoints(d) {
-      return {
-        name: name$(d),
-        value: value$(d),
-        x: name$(d),
-        y: value$(d),
-        r: value2$(d)
-      };
-    }
-  }
-
-  updateData(value = this._dataText) {
-    /* if (this._dataText === value) {
-      return this.clear();
-    } */
-
+    this.rawData = data;
     this._dataText = value;
-    const parsed = babyparse.parse(this._dataText, {
-      header: true,
-      dynamicTyping: true
-    });
-
-    this.errors = parsed.errors;
-
-    if (this.errors.length) {
-      return this.clear();
-    }
-
-    this.rawData = parsed.data;
-
-    const headerValues = parsed.meta.fields.map(d => ({
-      name: d,
-      type: typeof parsed.data[0][d]
-    }));
-
-    if (JSON.stringify(headerValues) !== JSON.stringify(this.headerValues)) {
-      this.headerValues = headerValues.slice();
-      this.dataDims = [null, null, null, null];
-      this.data = [];
-    } else {
-      this.processData();
-    }
   }
 
-  updateColorScheme() {
-    const domain = this.diverging ? this.updateColorSchemeDiv() : this.updateColorSchemeSeq();
-    this.chartOptions.colorScheme = {...this.chartOptions.colorScheme, domain};
-  }
+  private addFilter(query: Query): Filter {
+    const key = query.column.key;
+    let filter = this.filters.find(c => c.key === key);
+    if (!filter) {
+      const values = query.column.values;
+      const minValue = Math.min(...values);
+      const maxValue = Math.max(...values);
 
-  updateColorSchemeSeq() {
-    const cs = getColorScale(this.colors, this.bezier, this.lightness);
-    return cs.colors(this.steps);
-  }
+      const type = (values.length < 6 || isNaN(minValue) || isNaN(maxValue)) ? 'cat' : 'value';
 
-  updateColorSchemeDiv() {
-    const domainL = getColorScale(this.colors, this.bezier, this.lightness).colors(this.steps);
-    const domainR = getColorScale(this.colorsRight, this.bezierRight, this.lightnessRight).colors(this.steps);
+      const range = type === 'value' ? [minValue, maxValue] : [];
 
-    if (domainL[domainL.length - 1] === domainR[0]) {
-      domainL.pop();
+      filter = {
+        type,
+        label: toCapitalizedWords(key),
+        key,
+        minValue,
+        maxValue,
+        query,
+        step: 1,
+        values,
+        rangeIndex: {},
+        range
+      };
+      this.filters.push(filter);
     }
-
-    const cs = chroma.scale([...domainL, ...domainR]);
-    return cs.colors(this.steps);
+    return filter;
   }
 }
-
-function clean(s: string): string[] {
-  return s.trim().replace(/(, *| +)/g, ',').replace(/['"]/g, '').split(',');
-}
-
-function getColorScale(colors: string, bezier: boolean, lightness: boolean) {
-  const cleanColors = clean(colors);
-  const scale = bezier ? chroma.bezier(cleanColors.slice(0, 5)).scale() : chroma.scale(cleanColors);
-  return scale.mode('lab').correctLightness(lightness);
-}
-
