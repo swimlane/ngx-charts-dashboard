@@ -1,7 +1,7 @@
 <div>
 
     <ngx-section class="shadow dark" sectionTitle="Select your Chart">
-      <ngx-select [filterable]="false" label="Chart Type" [ngModel]="[chartType]" (change)="chartType = $event[0]">
+      <ngx-select [filterable]="false" label="Chart Type" [ngModel]="[chartType]" (change)="setChartType($event[0])">
         <ngx-select-option *ngFor="let chart of chartTypes" [name]="chart.title" [value]="chart">
         </ngx-select-option>
       </ngx-select>

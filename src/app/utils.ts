@@ -1,4 +1,7 @@
-export function toCapitalizedWords(name) {
+export function toCapitalizedWords(name: string) {
+  if (typeof name !== 'string') {
+    return null;
+  }
   const words = name.match(/[A-Za-z][a-z]*/g);
   return words.map(capitalize).join(' ');
 

@@ -5,7 +5,7 @@ import chroma from 'chroma-js';
 
 import { Chart, Filter, Data, Query } from '../data.models';
 import { DataService } from '../data.service';
-import { chartTypes } from '../chartTypes';
+import { chartTypes } from './chartTypes';
 import { toCapitalizedWords } from '../utils';
 
 const defaultOptions = {
@@ -89,17 +89,17 @@ export class ChartBuilderComponent implements OnInit {
       return;
     }
 
-    // todo: this assumes bar chart/single series
-    const xKey = this.dataDims[0];
+    const labels = this.chartType.chartLabels(this.dataDims.map(toCapitalizedWords));
+
+    Object.assign(this.chartOptions, labels);
+
+    let xKey: any = this.dataDims[0];
+    if (this.dataDims[1]) {
+      xKey = [xKey, this.dataDims[1]];
+    }
+
     const yKey = this.dataDims[2];
     const agg = this.dataDims[4];
-
-    const x = this.chartOptions.xAxisLabel = this.chartOptions.legendTitle = toCapitalizedWords(xKey);
-    const y = toCapitalizedWords(yKey);
-    const a = toCapitalizedWords(agg);
-
-    this.chartOptions.yAxisLabel = `${a} of ${y}`;
-    this.chartOptions.title = `${a} of ${y} vs ${x}`;
 
     const query = await this.dataService.createQuery(xKey, yKey, agg);
     this.data = this.dataService.getChartSeriesFromQuery(query, yKey, agg);
@@ -140,6 +140,11 @@ export class ChartBuilderComponent implements OnInit {
     chart.dataDims = this.dataDims.slice();
     chart.theme = this.theme;
     this.addChart.emit(chart);
+  }
+
+  setChartType(chartType) {
+    this.chartType = chartType;
+    this.dataDims = chartType.dimLables.map((l, i) => l ? this.dataDims[i] : null);
   }
 
   private updateColorSchemeSeq() {

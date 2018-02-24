@@ -71,6 +71,7 @@ export class AppComponent implements OnInit {
   clearAll() {
     this.dataText = '';
     this.charts = [];
+    this.filters = [];
   }
 
   async addChartToDashboard(chart: Chart) {

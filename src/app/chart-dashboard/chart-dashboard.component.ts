@@ -66,6 +66,20 @@ export class ChartDashboardComponent implements OnInit {
     this.ngZone.runOutsideAngular(() => {
       this.charts.forEach(chart => {
         chart.data = this.dataService.getChartSeriesFromQuery(chart.xQuery, chart.dataDims[2], chart.dataDims[4]);
+
+        // todo: move to dataService
+        const filter = chart.xFilter;
+        if (filter.type === 'cat' && filter.values.length > 0) {
+          chart.activeEntries = chart.data.filter(d => {
+            return filter.rangeIndex[d.name];
+          });
+        } else if (filter.type === 'value') {
+          chart.activeEntries = chart.data.filter(d => {
+            return (d.name >= filter.minValue && d.name <= filter.maxValue);
+          });
+        } else {
+          chart.activeEntries = [];
+        }
       });
     });
     this.ngZone.run(() => { });

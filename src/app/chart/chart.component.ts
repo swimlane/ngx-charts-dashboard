@@ -1,18 +1,36 @@
-import { Component, OnInit, Input, EventEmitter, Output } from '@angular/core';
+import { Component, OnInit, Input, EventEmitter, Output, HostBinding, ViewEncapsulation } from '@angular/core';
 
 import { Universe, Chart, Filter, Data, Query } from '../data.models';
+
+const EMPTY = [];
 
 @Component({
   selector: 'app-chart',
   templateUrl: './chart.component.html',
-  styleUrls: ['./chart.component.css']
+  styleUrls: ['./chart.component.scss'],
+  encapsulation: ViewEncapsulation.None
 })
 export class ChartComponent implements OnInit {
-  @Output() select: EventEmitter<{chart: Chart, value: any}> = new EventEmitter();
+  @Output() select: EventEmitter<{chart: Chart, value?: any}> = new EventEmitter();
 
   @Input() chart: Chart;
   @Input() chartType: any;
   @Input() data: Data[];
+
+  @Input() set activeEntries(value: Data[]) {
+    this._activeEntries = value;
+  }
+
+  get activeEntries(): Data[] {
+    return this.hasActiveEntries ? this._activeEntries : EMPTY;
+  }
+
+  private _activeEntries: Data[];
+
+  @HostBinding('class.has-active-entries')
+  get hasActiveEntries() {
+    return this._activeEntries && this._activeEntries.length > 0;
+  }
 
   constructor() { }
 
@@ -20,17 +38,20 @@ export class ChartComponent implements OnInit {
   }
 
   onSelect(data: Data) {
-    const value = typeof data === 'object' ? data.name : data;
-    if (this.chart.xFilter) {
-      const filter = this.chart.xFilter;
-      switch (filter.type) {
-        case 'value':
-          filter.range[0] = value;
-          break;
-        default:
-          filter.rangeIndex[value] = !filter.rangeIndex[value];
+    if (data) {
+      const value = typeof data === 'object' ? data.name : data;
+      if (this.chart.xFilter) {
+        const filter = this.chart.xFilter;
+        switch (filter.type) {
+          case 'value':
+            filter.range[0] = value;
+            break;
+          default:
+            filter.rangeIndex[value] = !filter.rangeIndex[value];
+        }
       }
+      return this.select.emit({chart: this.chart, value});
     }
-    this.select.emit({chart: this.chart, value});
+    return this.select.emit({chart: this.chart});
   }
 }

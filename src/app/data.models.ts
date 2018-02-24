@@ -31,6 +31,7 @@ export interface Chart {
   yFilter: Filter;
 
   data: Data[];
+  activeEntries: Data[];
   chartType: {};
   theme: string;
 }

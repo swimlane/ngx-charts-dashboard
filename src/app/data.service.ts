@@ -1,6 +1,7 @@
 import { Injectable, EventEmitter } from '@angular/core';
 import * as universe from 'universe';
-import * as babyparse from 'babyparse';
+import * as papaparse from 'papaparse';
+import { nest } from 'd3-collection';
 
 import { Universe, Chart, Filter, Data, Query } from './data.models';
 
@@ -38,12 +39,13 @@ export class DataService {
   constructor() { }
 
   async updateData(dataText: string): Promise<Data[]> {
-    this._parsed = babyparse.parse(dataText, {
+    this._parsed = papaparse.parse(dataText, {
       header: true,
-      dynamicTyping: true
+      dynamicTyping: true,
+      skipEmptyLines: true
     });
 
-    if (this._parsed.errors.length) {
+    if (this._parsed.meta.aborted || this._parsed.data.length === 0) {
       this._dataText = '';
       return this.rawData;
     }
@@ -74,15 +76,37 @@ export class DataService {
   }
 
   getChartSeriesFromQuery(query: Query, yKey: string = 'count', aggragate = 'sum'): Data[] {
-    return query.data.map(d => {
+    let data: any = query.data.map(d => {
       let value =  d.value[yKey];
       if (typeof value === 'object') {
         value = value[aggragate];
       }
+
+      // todo: key is array
       return {
         name: d.key,
         value: value
       };
     }).filter(d => d.value !== 0);
+
+    if (data.length > 0 && Array.isArray(data[0].name)) {
+      data = nest()
+        .key(d => d.name[0])
+        .entries(data)
+        .map(d => {
+          const series = d.values.map(dd => {
+            return {
+              name: dd.name[1],
+              value: dd.value
+            };
+          });
+          return {
+            name: d.key,
+            series
+          };
+        });
+    }
+
+    return data;
   }
 }
