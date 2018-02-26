@@ -1,4 +1,9 @@
-
+export interface ChartType {
+  name: string;
+  title: string;
+  dimLabels: string[];
+  chartLabels: Function;
+}
 
 export interface Chart {
   view: any;
@@ -32,7 +37,7 @@ export interface Chart {
 
   data: Data[];
   activeEntries: Data[];
-  chartType: {};
+  chartType: ChartType;
   theme: string;
 }
 

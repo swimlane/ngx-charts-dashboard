@@ -25,17 +25,31 @@
           [max]="filter.maxValue"
           (change)="updateFilters()">
         </ngx-slider>
-        {{filter.range[0]}}
+        <ngx-slider
+          [(ngModel)]="filter.range[1]"
+          [step]="filter.step"
+          [filled]="true"
+          [min]="filter.minValue"
+          [max]="filter.maxValue"
+          (change)="updateFilters()">
+        </ngx-slider>
+        <br />{{filter.range[0]}} - {{filter.range[1]}}
       </div>
       <div *ngIf="filter.type === 'cat'">
         <label>{{filter.label}}</label>
         <ul class="vertical-list">
-          <li *ngFor="let item of filter.query.data">
-            <ngx-checkbox
-              [(ngModel)]="filter.rangeIndex[item.key]"
-              (change)="updateFilters()">
-              {{item.key}} ({{item.value.count}})
-            </ngx-checkbox>
+          <li class="cat-filter-item" *ngFor="let item of filter.query.data">
+            <div>
+              <ngx-checkbox
+                [(ngModel)]="filter.rangeIndex[item.key]"
+                (change)="updateFilters()">
+                {{item.key}}
+              </ngx-checkbox>
+            </div>
+            <div>
+              <ngx-button class="select-single-filter" (click)="onOnly(filter, item.key)">only</ngx-button>
+              <span class="count">{{item.value.count}}</span>
+            </div>
           </li>
         </ul>
       </div>

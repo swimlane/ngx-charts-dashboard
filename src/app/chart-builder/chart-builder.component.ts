@@ -1,9 +1,9 @@
 import { Component, OnInit, NgZone, Output, EventEmitter } from '@angular/core';
 import { colorSets } from '@swimlane/ngx-charts/release/utils/color-sets';
 import * as shape from 'd3-shape';
-import chroma from 'chroma-js';
+import * as chroma from 'chroma-js';
 
-import { Chart, Filter, Data, Query } from '../data.models';
+import { ChartType, Chart, Filter, Data, Query } from '../data.models';
 import { DataService } from '../data.service';
 import { chartTypes } from './chartTypes';
 import { toCapitalizedWords } from '../utils';
@@ -50,7 +50,7 @@ export class ChartBuilderComponent implements OnInit {
   lightnessRight: boolean;
   diverging: boolean;
   theme: string;
-  chartType: any = chartTypes[0];
+  chartType: ChartType = chartTypes[0];
 
   data: Data[] = [];
   headerValues: any[] = [];
@@ -60,7 +60,7 @@ export class ChartBuilderComponent implements OnInit {
   @Output() addChart: EventEmitter<Chart> = new EventEmitter();
 
   get hasChartSelected(): boolean {
-    return this.chartType && this.chartType.name;
+    return this.chartType && !!this.chartType.name;
   }
 
   get hasValidDimensions(): boolean {
@@ -84,14 +84,21 @@ export class ChartBuilderComponent implements OnInit {
     });
   }
 
-  async processData() {
+  setChartLabels(): any {
     if (!this.hasValidDimensions) {
       return;
     }
 
     const labels = this.chartType.chartLabels(this.dataDims.map(toCapitalizedWords));
+    return Object.assign(this.chartOptions, labels);
+  }
 
-    Object.assign(this.chartOptions, labels);
+  async processData(): Promise<void> {
+    if (!this.hasValidDimensions) {
+      return;
+    }
+
+    this.setChartLabels();
 
     let xKey: any = this.dataDims[0];
     if (this.dataDims[1]) {
@@ -104,15 +111,15 @@ export class ChartBuilderComponent implements OnInit {
     const query = await this.dataService.createQuery(xKey, yKey, agg);
     this.data = this.dataService.getChartSeriesFromQuery(query, yKey, agg);
 
-    this.ngZone.run(() => { });
+    return this.ngZone.run(() => { });
   }
 
-  ngOnInit() {
+  ngOnInit(): void {
     this.dataDims = [null, null, null, null, 'count'];
     this.clearAll();
   }
 
-  clearAll() {
+  clearAll(): any {
     this.chartType = chartTypes[0];
     this.theme = 'dark';
     this.colors = '#a8385d,#7aa3e5,#a27ea8,#aae3f5,#adcded,#a95963,#8796c0,#7ed3ed,#50abcc,#ad6886';
@@ -128,32 +135,33 @@ export class ChartBuilderComponent implements OnInit {
     return this.updateColorScheme();
   }
 
-  updateColorScheme() {
+  updateColorScheme(): any {
     const domain = this.diverging ? this.updateColorSchemeDiv() : this.updateColorSchemeSeq();
-    this.chartOptions.colorScheme = {...this.chartOptions.colorScheme, domain};
+    return this.chartOptions.colorScheme = {...this.chartOptions.colorScheme, domain};
   }
 
-  async onAddToDashboard() {
+  async onAddToDashboard(): Promise<void> {
     const chart = {...this.chartOptions};
     chart.data = this.data.slice();
     chart.chartType = {...this.chartType};
     chart.dataDims = this.dataDims.slice();
     chart.theme = this.theme;
-    this.addChart.emit(chart);
+    return this.addChart.emit(chart);
   }
 
-  setChartType(chartType) {
+  setChartType(chartType: ChartType): void {
     this.chartType = chartType;
-    this.dataDims = chartType.dimLables.map((l, i) => l ? this.dataDims[i] : null);
+    this.dataDims = chartType.dimLabels.map((l, i) => l ? this.dataDims[i] : null);
+    return this.setChartLabels();
   }
 
-  private updateColorSchemeSeq() {
-    return getColorScale(this.colors, this.bezier, this.lightness).colors(this.steps);
+  private updateColorSchemeSeq(): string[] {
+    return this.getColorScale(this.colors, this.bezier, this.lightness);
   }
 
-  private updateColorSchemeDiv() {
-    const domainL = getColorScale(this.colors, this.bezier, this.lightness).colors(this.steps);
-    const domainR = getColorScale(this.colorsRight, this.bezierRight, this.lightnessRight).colors(this.steps);
+  private updateColorSchemeDiv(): string[] {
+    const domainL = this.getColorScale(this.colors, this.bezier, this.lightness);
+    const domainR = this.getColorScale(this.colorsRight, this.bezierRight, this.lightnessRight);
 
     if (domainL[domainL.length - 1] === domainR[0]) {
       domainL.pop();
@@ -161,17 +169,19 @@ export class ChartBuilderComponent implements OnInit {
 
     return chroma.scale([...domainL, ...domainR]).colors(this.steps);
   }
-}
 
-function getColorScale(colors: string, bezier: boolean, lightness: boolean): any {
-  const cleanColors = clean(colors);
-  const scale = bezier ? chroma.bezier(cleanColors.slice(0, 5)).scale() : chroma.scale(cleanColors);
-  return scale.mode('lab').correctLightness(lightness);
-
-  function clean(s: string): string[] {
-    return s.trim().replace(/(, *| +)/g, ',').replace(/['"]/g, '').split(',');
+  private getColorScale(colors: string, bezier: boolean, lightness: boolean): string[] {
+    const cleanColors = clean(colors);
+    const scale = bezier ? chroma.bezier(cleanColors.slice(0, 5)).scale() : chroma.scale(cleanColors);
+    return scale.mode('lab').correctLightness(lightness).colors(this.steps);
+  
+    function clean(s: string): string[] {
+      return s.trim().replace(/(, *| +)/g, ',').replace(/['"]/g, '').split(',');
+    }
   }
 }
+
+
 
 
 

@@ -87,7 +87,7 @@ export class DataService {
         name: d.key,
         value: value
       };
-    }).filter(d => d.value !== 0);
+    }); // .filter(d => d.value !== 0);
 
     if (data.length > 0 && Array.isArray(data[0].name)) {
       data = nest()

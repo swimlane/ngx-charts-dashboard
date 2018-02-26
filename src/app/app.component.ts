@@ -115,7 +115,17 @@ export class AppComponent implements OnInit {
 
       const type = (values.length < 6 || isNaN(minValue) || isNaN(maxValue)) ? 'cat' : 'value';
 
-      const range = type === 'value' ? [minValue, maxValue] : [];
+      let range = [];
+      let rangeIndex = {};
+      if (type === 'value') {
+        range = [minValue, maxValue];
+      } else {
+        range = query.column.values.slice(0);
+        rangeIndex = range.reduce((acc, cur) => {
+          acc[cur] = true;
+          return acc;
+        }, rangeIndex);
+      }
 
       filter = {
         type,
@@ -126,7 +136,7 @@ export class AppComponent implements OnInit {
         query,
         step: 1,
         values,
-        rangeIndex: {},
+        rangeIndex,
         range
       };
       this.filters.push(filter);

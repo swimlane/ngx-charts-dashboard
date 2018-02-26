@@ -1,6 +1,4 @@
 
-
-
 app-chart {
   h1 {
     text-align: center;
@@ -14,6 +12,16 @@ app-chart {
       &.active {
         opacity: 1;
       }
+    }
+  }
+
+  .svg-saver-container {
+    width: 100%;
+    text-align: center;
+
+    .ngx-button button {
+      padding: 0;
+      width: initial;
     }
   }
 }

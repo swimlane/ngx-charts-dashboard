@@ -1,12 +1,13 @@
 import { toCapitalizedWords } from '../utils';
+import { ChartType } from '../data.models';
 
-function createChartType({title, ...obj}) {
+function createChartType({title, ...obj}): ChartType {
   return {
     title,
     name: titleToName(title),
     dimLabels: ['Group by', 'Name', 'Value', null],
     ...obj
-  };
+  } as ChartType;
 
   function titleToName(s: string) {
     return s.toLowerCase().replace(/\ /g, '-');

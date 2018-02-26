@@ -29,4 +29,24 @@
       padding-left: 10px;
     }
   }
+
+  .cat-filter-item {
+    display: flex;
+    clear: both;
+
+    > div {
+      flex: 1 1 50%;
+    }
+
+    ngx-button {
+      visibility: hidden;
+      display: inline-block;
+    }
+    &:hover ngx-button {
+      visibility: initial;
+    }
+    .count {
+      float: right;
+    }
+  }
 }

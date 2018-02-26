@@ -1,4 +1,5 @@
 import { Component, OnInit, Input, EventEmitter, Output, HostBinding, ViewEncapsulation } from '@angular/core';
+import * as SvgSaver from 'svgsaver';
 
 import { Universe, Chart, Filter, Data, Query } from '../data.models';
 
@@ -16,6 +17,8 @@ export class ChartComponent implements OnInit {
   @Input() chart: Chart;
   @Input() chartType: any;
   @Input() data: Data[];
+
+  svgSaver = new SvgSaver();
 
   @Input() set activeEntries(value: Data[]) {
     this._activeEntries = value;

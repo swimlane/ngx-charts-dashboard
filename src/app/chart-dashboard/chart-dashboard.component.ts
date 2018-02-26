@@ -26,7 +26,11 @@ export class ChartDashboardComponent implements OnInit {
           filter.range = [filter.minValue, filter.maxValue];
           break;
         default:
-          filter.rangeIndex = {};
+          filter.range = filter.query.column.values;
+          filter.rangeIndex = filter.range.reduce((acc, cur) => {
+            acc[cur] = true;
+            return acc;
+          }, {});
       }
     });
     return this.updateFilters();
@@ -34,6 +38,13 @@ export class ChartDashboardComponent implements OnInit {
 
   onSelect(): Promise<void> {
     return this.updateFilters();
+  }
+
+  onOnly(filter: Filter, id: string) {
+    filter.rangeIndex = {
+      [id]: true
+    };
+    this.updateFilters();
   }
 
   /** Updates universe/crossfilter filters based on UI filters */
@@ -53,7 +64,7 @@ export class ChartDashboardComponent implements OnInit {
             }
             return acc;
           }, []);
-          return this.dataService.dataUniverse.filter(filter.key, range.length > 0 ? range : undefined, false, true);
+          return this.dataService.dataUniverse.filter(filter.key, range, false, true);
       }
     });
 
